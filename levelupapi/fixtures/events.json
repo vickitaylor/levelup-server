@@ -1,0 +1,26 @@
+[
+    {
+        "model": "levelupapi.event",
+        "pk": 1,
+        "fields": {
+            "game": 1,
+            "description": "The game of life: get a job, get married, maybe have kids, and be the first one to retire in the mansion.",
+            "date": "2022-08-08",
+            "time": "19:00",
+            "organizer": 1,
+            "attendees": [1]
+        }
+    },
+    {
+        "model": "levelupapi.event",
+        "pk": 2,
+        "fields": {
+            "game": 2,
+            "description": "The first of the Paper Mario Series.",
+            "date": "2022-08-06",
+            "time": "12:00",
+            "organizer": 1,
+            "attendees": [1]
+        }
+    }
+]
