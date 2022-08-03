@@ -1,9 +1,12 @@
 """View module for handling requests about events"""
+from time import time
+from venv import create
 from django.http import HttpResponseServerError
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import serializers, status
-from levelupapi.models import Event
+from tomlkit import date
+from levelupapi.models import Event, Game, Gamer
 
 
 class EventView(ViewSet):
@@ -33,7 +36,7 @@ class EventView(ViewSet):
             Response -- JSON serialized list of events
         """
         events = Event.objects.all()
-        
+
         # adding query for game id to the events url
         game = request.query_params.get('game', None)
         if game is not None:
@@ -42,12 +45,33 @@ class EventView(ViewSet):
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data)
 
+    def create(self, request):
+        """Handles the POST operations
+
+        Returns:
+            Response -- JSON serialized game instance
+        """
+        gamer = Gamer.objects.get(user=request.auth.user)
+        game = Game.objects.get(pk=request.data["game"])
+
+        event = Event.objects.create(
+            description=request.data["description"],
+            date=request.data["date"],
+            time=request.data["time"],
+            game=game,
+            organizer=gamer
+        )
+        serializer = EventSerializer(event)
+        return Response(serializer.data, status= status.HTTP_201_CREATED)
+
+
 class EventSerializer(serializers.ModelSerializer):
     """JSON serializer for events.
     """
     class Meta:
         model = Event
-        fields = ('game', 'description', 'date', 'time', 'organizer', 'attendees')
+        fields = ('id', 'game', 'description', 'date',
+                  'time', 'organizer', 'attendees')
         # depth added for embed details, depth =1, gives details on the foreign keys (game,
         # organizer, attendees) when changed to 2, it embedded details from the foreign
         # keys for the organizer and attendees and game (but not gamer, that would be a
