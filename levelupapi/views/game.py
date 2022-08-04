@@ -3,7 +3,7 @@ from django.http import HttpResponseServerError
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import serializers, status
-from levelupapi.models import Game, Gamer, GameType
+from levelupapi.models import Game, Gamer, GameType, game_type
 
 
 class GameView(ViewSet):
@@ -26,7 +26,7 @@ class GameView(ViewSet):
         try:
             game = Game.objects.get(pk=pk)
             serializer = GameSerializer(game)
-            return Response(serializer.data)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         except Game.DoesNotExist as ex:
             return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
 
@@ -45,7 +45,7 @@ class GameView(ViewSet):
             games = games.filter(game_type_id=game_type)
 
         serializer = GameSerializer(games, many=True)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request):
         """Handle POST operations
@@ -78,6 +78,44 @@ class GameView(ViewSet):
         # need to specify the response status code, otherwise it defaults to a 200
         return Response(serializer.data, status= status.HTTP_201_CREATED)
 
+    def update(self, request, pk):
+        """Handle PUT requests for a game
+
+        Args:
+            request (dict)): holds the information for the request from the client
+            pk (int): the primary key of the game object being updated
+
+        Returns:
+            Response: Empty body with 204 status code
+        """
+
+        # getting the game object requested by the primary key
+        game = Game.objects.get(pk=pk)
+        # setting fields on game to the values coming in from the client
+        game.title = request.data["title"]
+        game.maker = request.data["maker"]
+        game.number_of_players = request.data["number_of_players"]
+        game.skill_level = request.data["skill_level"]
+
+        # created the game_type variable to find the gametype that matched the requested data
+        game_type = GameType.objects.get(pk=request.data["game_type"])
+        # then assigned game_type to the game variable
+        game.game_type = game_type
+
+        # saving to the database
+        game.save()
+
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
+
+    def destroy(self, response, pk):
+        """Handles the DELETE request for a game
+        """
+        # created a game variable to match the game requested to the one from the list
+        game = Game.objects.get(pk=pk)
+        # deletes the game from the database
+        game.delete()
+        # a response is not received, and when competed it will return code 204
+        return Response(None, status=status.HTTP_204_NO_CONTENT)
 
 class GameSerializer(serializers.ModelSerializer):
     """JSON serializer for games
