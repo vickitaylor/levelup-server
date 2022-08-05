@@ -8,7 +8,7 @@
             "date": "2022-08-08",
             "time": "19:00",
             "organizer": 1,
-            "attendees": [1]
+            "attendees": [1, 2]
         }
     },
     {
@@ -20,7 +20,7 @@
             "date": "2022-08-06",
             "time": "12:00",
             "organizer": 1,
-            "attendees": [1]
+            "attendees": [1, 2]
         }
     }
 ]
