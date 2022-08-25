@@ -14,7 +14,8 @@
     <ol>
         {% for event in user.events %}
         <li>
-            Event: {{ event.game_name }}
+            Game for Event: {{ event.game_name }} <br/>
+            Date: {{event.date}} Time: {{event.time}}
         </li>
         {% endfor %}
     </ol>
