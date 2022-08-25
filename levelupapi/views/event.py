@@ -1,5 +1,6 @@
 """View module for handling requests about events"""
 from django.http import HttpResponseServerError
+from django.db.models import Count
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -33,7 +34,8 @@ class EventView(ViewSet):
         Returns:
             Response -- JSON serialized list of events
         """
-        events = Event.objects.all()
+        # events = Event.objects.all()
+        events = Event.objects.annotate(attendees_count=Count('attendees'))
 
         # adding query for game id to the events url
         game = request.query_params.get('game', None)
@@ -129,10 +131,12 @@ class EventView(ViewSet):
 class EventSerializer(serializers.ModelSerializer):
     """JSON serializer for events.
     """
+    attendees_count = serializers.IntegerField(default=None)
+
     class Meta:
         model = Event
         fields = ('id', 'game', 'description', 'date',
-                  'time', 'organizer', 'attendees', 'joined')
+                  'time', 'organizer', 'attendees', 'joined', 'attendees_count')
         # depth added for embed details, depth =1, gives details on the foreign keys (game,
         # organizer, attendees) when changed to 2, it embedded details from the foreign
         # keys for the organizer and attendees and game (but not gamer, that would be a

@@ -1,9 +1,11 @@
 """View module for handling requests about events"""
 from django.http import HttpResponseServerError
+from django.db.models import Count
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import serializers, status
-from levelupapi.models import Game, Gamer, GameType, game_type
+
+from levelupapi.models import Game, Gamer, GameType
 
 
 class GameView(ViewSet):
@@ -36,11 +38,15 @@ class GameView(ViewSet):
         Returns:
             Response: JSON serialized list of games
         """
-        games = Game.objects.all()
+        # games = Game.objects.all()
 
         # check to see if there is a query in the url for game_type, then filter to
         # match the id in the query
         game_type = request.query_params.get('type', None)
+
+        # counting the events per game
+        games = Game.objects.annotate(event_count=Count('events'))
+
         if game_type is not None:
             games = games.filter(game_type_id=game_type)
 
@@ -97,7 +103,7 @@ class GameView(ViewSet):
         game.number_of_players = request.data["number_of_players"]
         game.skill_level = request.data["skill_level"]
 
-        # created the game_type variable to find the gametype that matched the requested data
+        # created the game_type variable to find the game_type that matched the requested data
         game_type = GameType.objects.get(pk=request.data["game_type"])
         # then assigned game_type to the game variable
         game.game_type = game_type
@@ -120,10 +126,12 @@ class GameView(ViewSet):
 class GameSerializer(serializers.ModelSerializer):
     """JSON serializer for games
     """
+    event_count = serializers.IntegerField(default=None)
+
     class Meta:
         model = Game
         # for the fields you specify what you want returned (if it is not specified, you will
         # not get it back, ie, if id was not included, you cannot access the # event.id property)
         fields = ('id', 'game_type', 'title', 'maker',
-                  'gamer', 'number_of_players', 'skill_level')
+                  'gamer', 'number_of_players', 'skill_level', 'event_count')
         depth = 1

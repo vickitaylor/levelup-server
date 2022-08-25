@@ -6,5 +6,21 @@
             "user": 1,
             "bio": "Me"
         }
+    },
+    {
+        "model": "levelupapi.gamer",
+        "pk": 2,
+        "fields": {
+            "user": 2,
+            "bio": "Woof, Woof, I like balls."
+        }
+    },
+    {
+        "model": "levelupapi.gamer",
+        "pk": 3,
+        "fields": {
+            "user": 3,
+            "bio": "A small red fruit."
+        }
     }
 ]

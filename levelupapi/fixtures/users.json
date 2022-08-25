@@ -16,5 +16,41 @@
             "groups": [],
             "user_permissions": []
         }
+    },
+    {
+        "model": "auth.user",
+        "pk": 2,
+        "fields": {
+            "password": "pbkdf2_sha256$320000$zPDYoddkwp671GSUL1XyBt$hZFvfkBlRDzbGZjofQ44hD8r1hSvenrPWBF0jfR0FiU=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "stella",
+            "first_name": "Stella",
+            "last_name": "Dog",
+            "email": "me@me.com",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2022-08-04 22:03:24.533024",
+            "groups": [],
+            "user_permissions": []
+        }
+    },
+    {
+        "model": "auth.user",
+        "pk": 3,
+        "fields": {
+            "password": "pbkdf2_sha256$320000$HCg1WEmMNQFUqMNVBiiAVe$U+S2P+K799bgnTJCFKPfc52mLPMvJnRuKM0hGJRua1Y=",
+            "last_login": null,
+            "is_superuser": false,
+            "username": "strawberry",
+            "first_name": "Straw",
+            "last_name": "Berry",
+            "email": "me@me.com",
+            "is_staff": false,
+            "is_active": true,
+            "date_joined": "2022-08-05 03:38:07.804353",
+            "groups": [],
+            "user_permissions": []
+        }
     }
 ]

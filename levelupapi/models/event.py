@@ -1,4 +1,3 @@
-from asyncio import events
 from django.db import models
 
 # for the many to many add the userIds to an array for attendees on the json file.
