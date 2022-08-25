@@ -1,4 +1,5 @@
-""" Module for generating games by user report"""
+""" Module for generating events by user report"""
+""" URL for this report is http://localhost:8000/reports/userevents """
 
 from django.shortcuts import render
 from django.db import connection
