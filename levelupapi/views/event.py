@@ -1,6 +1,7 @@
 """View module for handling requests about events"""
 from django.http import HttpResponseServerError
 from django.db.models import Count
+from django.db.models import Q
 from django.core.exceptions import ValidationError
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
@@ -31,25 +32,36 @@ class EventView(ViewSet):
 
     def list(self, request):
         """Handles the GET requests for all events in the database
+        - using Q to query the event table, aggregating how many total attendees there are.
+        And determining if the current user has rsvped or not.
 
         Returns:
             Response -- JSON serialized list of events
         """
+        gamer = Gamer.objects.get(user=request.auth.user)
+        
+        # no longer needed since annotate was added.
         # events = Event.objects.all()
-        events = Event.objects.annotate(attendees_count=Count('attendees'))
+        
+        events = Event.objects.annotate(
+            attendees_count=Count('attendees'),
+            joined=Count(
+                'attendees',
+                filter=Q(attendees=gamer)
+            )
+        )
 
         # adding query for game id to the events url
         game = request.query_params.get('game', None)
         if game is not None:
             events = events.filter(game_id=game)
 
-        gamer = Gamer.objects.get(user=request.auth.user)
-
-        # Set the 'joined' property on every event
-        for event in events:
-            # check to see if the gamer is in the attendees list on the event, this will
-            # evaluate to true of false if the gamer is in the attendees list
-            event.joined = gamer in event.attendees.all()
+        # no longer needed sine the joined property is being set using the annotate.
+        # # Set the 'joined' property on every event
+        # for event in events:
+        #     # check to see if the gamer is in the attendees list on the event, this will
+        #     # evaluate to true of false if the gamer is in the attendees list
+        #     event.joined = gamer in event.attendees.all()
 
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

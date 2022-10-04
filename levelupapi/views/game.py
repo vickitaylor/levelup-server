@@ -1,6 +1,7 @@
 """View module for handling requests about events"""
 from django.http import HttpResponseServerError
 from django.db.models import Count
+from django.db.models import Q
 from django.core.exceptions import ValidationError
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
@@ -35,21 +36,38 @@ class GameView(ViewSet):
 
     def list(self, request):
         """Handles the GET request for all games in the database
+        - using Q to search for games that start with a search term, could also use contains
+        this only searches the title and maker columns.
 
         Returns:
             Response: JSON serialized list of games
         """
+        # no longer needed since using annotate below
         # games = Game.objects.all()
 
         # check to see if there is a query in the url for game_type, then filter to
         # match the id in the query
         game_type = request.query_params.get('type', None)
 
+        search = self.request.query_params.get('search', None)
+        gamer = Gamer.objects.get(user=request.auth.user)
+
         # counting the events per game
-        games = Game.objects.annotate(event_count=Count('events'))
+        games = Game.objects.annotate(
+            event_count=Count('events'),
+            user_event_count=Count(
+                'events',
+                filter=Q(events__organizer=gamer)
+            )
+        )
 
         if game_type is not None:
             games = games.filter(game_type_id=game_type)
+        if search is not None:
+            games = games.filter(
+                Q(title__startswith=search) |
+                Q(maker__startswith=search)
+            )
 
         serializer = GameSerializer(games, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -148,14 +166,18 @@ class GameView(ViewSet):
 class GameSerializer(serializers.ModelSerializer):
     """JSON serializer for games
     """
+    # *** remember to add the new fields created with annotate, so that it can be used by
+    # the serializer since they are not on the model. ***
     event_count = serializers.IntegerField(default=None)
+    user_event_count = serializers.IntegerField(default=None)
 
     class Meta:
         model = Game
         # for the fields you specify what you want returned (if it is not specified, you will
         # not get it back, ie, if id was not included, you cannot access the # event.id property)
         fields = ('id', 'game_type', 'title', 'maker',
-                  'gamer', 'number_of_players', 'skill_level', 'event_count')
+                  'gamer', 'number_of_players', 'skill_level', 'event_count', 'user_event_count'
+                  )
         depth = 1
 
 
