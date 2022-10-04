@@ -1,6 +1,7 @@
 """View module for handling requests about events"""
 from django.http import HttpResponseServerError
 from django.db.models import Count
+from django.core.exceptions import ValidationError
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import serializers, status
@@ -53,36 +54,56 @@ class GameView(ViewSet):
         serializer = GameSerializer(games, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    # def create(self, request):
+    #     """Handle POST operations
+    #     Inside the method, the first line is getting the gamer that is logged in. Since all of
+    #     our postman or fetch requests have the user’s auth token in the headers, the request
+    #     will get the user object based on that token. From there, we use the request.auth.user
+    #     to get the Gamer object based on the user.
+    #     Then the gameType object is retrieved from the database, so that the type selected is
+    #     in the database, and not something new.  That data is passed in from the client and held
+    #     in request.data dictionary, the keys must match.
+    #     Then to add the game to the database, the create method is called and the fields are
+    #     passed as parameters to the function. Once create has ran, it created a new game
+    #     instance and id, and then it is being serialized and returned to the client.
+    #     - this method that is commented out was the initial create, another create was made to
+    #     include validation.
+
+    #     Returns:
+    #         Response -- JSON serialized game instance
+    #     """
+    #     gamer = Gamer.objects.get(user=request.auth.user)
+    #     game_type = GameType.objects.get(pk=request.data["game_type"])
+
+    #     game = Game.objects.create(
+    #         title=request.data["title"],
+    #         maker=request.data["maker"],
+    #         number_of_players=request.data["number_of_players"],
+    #         skill_level=request.data["skill_level"],
+    #         gamer=gamer,
+    #         game_type=game_type
+    #     )
+    #     serializer = GameSerializer(game)
+    #     # need to specify the response status code, otherwise it defaults to a 200
+    #     return Response(serializer.data, status= status.HTTP_201_CREATED)
+
     def create(self, request):
-        """Handle POST operations
-        Inside the method, the first line is getting the gamer that is logged in. Since all of
-        our postman or fetch requests have the user’s auth token in the headers, the request
-        will get the user object based on that token. From there, we use the request.auth.user
-        to get the Gamer object based on the user.
-        Then the gameType object is retrieved from the database, so that the type selected is
-        in the database, and not something new.  That data is passed in from the client and held
-        in request.data dictionary, the keys must match.
-        Then to add the game to the database, the create method is called and the fields are
-        passed as parameters to the function. Once create has ran, it created a new game
-        instance and id, and then it is being serialized and returned to the client.
+        """
+        Handle POST operations, has a validation, to ensure the user inputted data that was expected.
+        In the above create, each field received data in a new instance of the Game model,
+        in the below, the request.data dictionary is passed to the create game serializer as the
+        data, and the keys on the dictionary must match the fields on the serializer instance.
+        is_valid is used to make sure teh client sent valid data, if true then it is saved.
 
         Returns:
             Response -- JSON serialized game instance
         """
-        gamer = Gamer.objects.get(user=request.auth.user)
-        game_type = GameType.objects.get(pk=request.data["game_type"])
 
-        game = Game.objects.create(
-            title=request.data["title"],
-            maker=request.data["maker"],
-            number_of_players=request.data["number_of_players"],
-            skill_level=request.data["skill_level"],
-            gamer=gamer,
-            game_type=game_type
-        )
-        serializer = GameSerializer(game)
-        # need to specify the response status code, otherwise it defaults to a 200
-        return Response(serializer.data, status= status.HTTP_201_CREATED)
+        gamer = Gamer.objects.get(user=request.auth.user)
+        serializer = CreateGameSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(gamer=gamer)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, pk):
         """Handle PUT requests for a game
@@ -123,6 +144,7 @@ class GameView(ViewSet):
         # a response is not received, and when competed it will return code 204
         return Response(None, status=status.HTTP_204_NO_CONTENT)
 
+
 class GameSerializer(serializers.ModelSerializer):
     """JSON serializer for games
     """
@@ -135,3 +157,12 @@ class GameSerializer(serializers.ModelSerializer):
         fields = ('id', 'game_type', 'title', 'maker',
                   'gamer', 'number_of_players', 'skill_level', 'event_count')
         depth = 1
+
+
+class CreateGameSerializer(serializers.ModelSerializer):
+    """ serializer for create game, to validate inputs on create game
+    """
+    class Meta:
+        model = Game
+        fields = ['id', 'title', 'maker',
+                  'number_of_players', 'skill_level', 'game_type']

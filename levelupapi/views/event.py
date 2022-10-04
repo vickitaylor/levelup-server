@@ -1,6 +1,7 @@
 """View module for handling requests about events"""
 from django.http import HttpResponseServerError
 from django.db.models import Count
+from django.core.exceptions import ValidationError
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework.decorators import action
@@ -53,23 +54,31 @@ class EventView(ViewSet):
         serializer = EventSerializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    # def create(self, request):
+    #     """Handles the POST operations
+    #       - using below create, refactored to use validation
+
+    #     Returns:
+    #         Response -- JSON serialized game instance
+    #     """
+    #     gamer = Gamer.objects.get(user=request.auth.user)
+    #     game = Game.objects.get(pk=request.data["game"])
+
+    #     event = Event.objects.create(
+    #         description=request.data["description"],
+    #         date=request.data["date"],
+    #         time=request.data["time"],
+    #         game=game,
+    #         organizer=gamer
+    #     )
+    #     serializer = EventSerializer(event)
+    #     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     def create(self, request):
-        """Handles the POST operations
-
-        Returns:
-            Response -- JSON serialized game instance
-        """
-        gamer = Gamer.objects.get(user=request.auth.user)
-        game = Game.objects.get(pk=request.data["game"])
-
-        event = Event.objects.create(
-            description=request.data["description"],
-            date=request.data["date"],
-            time=request.data["time"],
-            game=game,
-            organizer=gamer
-        )
-        serializer = EventSerializer(event)
+        organizer = Gamer.objects.get(user=request.auth.user)
+        serializer = CreateEventSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(organizer=organizer)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def update(self, request, pk):
@@ -142,3 +151,13 @@ class EventSerializer(serializers.ModelSerializer):
         # keys for the organizer and attendees and game (but not gamer, that would be a
         # depth of 3).
         depth = 2
+
+
+class CreateEventSerializer(serializers.ModelSerializer):
+    """ JSON serializer for event creation.
+    """
+
+    class Meta:
+        model = Event
+        fields = ('id', 'game', 'description', 'date',
+                  'time')
